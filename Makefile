@@ -4,9 +4,7 @@ all: $(BASE)
 
 OS := $(shell uname -s)
 
-ifeq ($(OS), Linux) # Science Center Linux Boxes
-  CPPFLAGS = -I/home/l/i/lib175/usr/glew/include
-  LDFLAGS += -L/home/l/i/lib175/usr/glew/lib -L/usr/X11R6/lib
+ifeq ($(OS), Linux)
   LIBS += -lGL -lGLU -lglut -lGLEW
 endif
 
@@ -15,20 +13,20 @@ ifeq ($(OS), Darwin) # Assume OS X
   LDFLAGS += -framework GLUT -framework OpenGL
 endif
 
-ifdef OPT 
+ifdef OPT
   #turn on optimization
   CXXFLAGS += -O2
-else 
+else
   #turn on debugging
   CXXFLAGS += -g
 endif
 
-CXX = g++ 
+CXX = g++
 
 OBJ = $(BASE).o ppm.o glsupport.o
 
 $(BASE): $(OBJ)
-	$(LINK.cpp) -o $@ $^ $(LIBS) 
+	$(LINK.cpp) -o $@ $^ $(LIBS)
 
 clean:
 	rm -f $(OBJ) $(BASE)

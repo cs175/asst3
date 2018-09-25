@@ -10,9 +10,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#if __GNUG__
-#include <tr1/memory>
-#endif
 
 #ifdef __MAC__
 #include <GLUT/glut.h>
@@ -30,7 +27,6 @@
 
 using namespace std; // for string, vector, iostream, and other standard C++
                      // stuff
-using namespace tr1; // for shared_ptr
 
 // G L O B A L S ///////////////////////////////////////////////////
 
