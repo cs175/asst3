@@ -10,3 +10,6 @@
 *.o
 *~
 .clang-format
+*.tex
+*.aux
+*.log
