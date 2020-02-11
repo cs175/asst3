@@ -25,8 +25,7 @@
 #include "matrix4.h"
 #include "ppm.h"
 
-using namespace std; // for string, vector, iostream, and other standard C++
-                     // stuff
+using namespace std; // for string, vector, iostream, and other standard C++ stuff
 
 // G L O B A L S ///////////////////////////////////////////////////
 
@@ -46,8 +45,7 @@ using namespace std; // for string, vector, iostream, and other standard C++
 static const bool g_Gl2Compatible = false;
 
 static const float g_frustMinFov = 60.0; // A minimal of 60 degree field of view
-static float g_frustFovY =
-    g_frustMinFov; // FOV in y direction (updated by updateFrustFovY)
+static float g_frustFovY = g_frustMinFov; // FOV in y direction (updated by updateFrustFovY)
 
 static const float g_frustNear = -0.1;  // near plane
 static const float g_frustFar = -50.0;  // far plane
@@ -178,7 +176,7 @@ struct Geometry {
         safe_glDisableVertexAttribArray(curSS.h_aNormal);
 
         // disable VAO
-        glBindVertexArray(NULL);
+        glBindVertexArray((GLuint) NULL);
     }
 };
 
