@@ -5,7 +5,7 @@ all: $(BASE)
 OS := $(shell uname -s)
 
 ifeq ($(OS), Linux)
-  LIBS += -lGL -lGLU -lglut -lGLEW
+  LIBS += -lGL -lGLU -lglut -lGLEW -lglfw
 endif
 
 ifeq ($(OS), Darwin) # Assume OS X

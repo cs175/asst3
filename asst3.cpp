@@ -12,11 +12,14 @@
 #include <vector>
 
 #ifdef __MAC__
-#include <GLUT/glut.h>
+#include <GLFW/glfw3.h>
 #include <OpenGL/gl3.h>
+#elif defined __gnu_linux__
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #else
 #include <GL/glew.h>
-#include <GL/glut.h>
+#include <GL/glfw3.h>
 #endif
 
 #include "cvec.h"
@@ -52,6 +55,8 @@ static const float g_frustFar = -50.0;  // far plane
 static const float g_groundY = -2.0;    // y coordinate of the ground
 static const float g_groundSize = 10.0; // half the ground length
 
+static GLFWwindow* g_window;
+
 static int g_windowWidth = 512;
 static int g_windowHeight = 512;
 static bool g_mouseClickDown = false; // is the mouse button pressed
@@ -59,6 +64,8 @@ static bool g_mouseLClickButton, g_mouseRClickButton, g_mouseMClickButton;
 static bool g_spaceDown = false; // space state, for middle mouse emulation
 static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
 static int g_activeShader = 0;
+
+static int g_framesPerSecond = 60;
 
 struct ShaderState {
     GlProgram program;
@@ -298,26 +305,27 @@ static void drawStuff() {
 
 static void display() {
     glUseProgram(g_shaderStates[g_activeShader]->program);
-    glClear(GL_COLOR_BUFFER_BIT |
-            GL_DEPTH_BUFFER_BIT); // clear framebuffer color&depth
+    // clear framebuffer color&depth
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     drawStuff();
 
-    glutSwapBuffers(); // show the back buffer (where we rendered stuff)
+    glfwSwapBuffers(g_window); // show the back buffer (where we rendered stuff)
 
     checkGlErrors();
 }
 
-static void reshape(const int w, const int h) {
+static void reshape(GLFWwindow * window, const int w, const int h) {
+    int width, height;
+    glfwGetFramebufferSize(g_window, &width, &height);
+    glViewport(0, 0, width, height);
     g_windowWidth = w;
     g_windowHeight = h;
-    glViewport(0, 0, w, h);
     cerr << "Size of window is now " << w << "x" << h << endl;
     updateFrustFovY();
-    glutPostRedisplay();
 }
 
-static void motion(const int x, const int y) {
+static void motion(GLFWwindow *window, double x, double y) {
     const double dx = x - g_mouseClickX;
     const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
@@ -338,91 +346,91 @@ static void motion(const int x, const int y) {
 
     if (g_mouseClickDown) {
         g_objectRbt[0] *= m; // Simply right-multiply is WRONG
-        glutPostRedisplay(); // we always redraw if we changed the scene
     }
 
     g_mouseClickX = x;
     g_mouseClickY = g_windowHeight - y - 1;
 }
 
-static void mouse(const int button, const int state, const int x, const int y) {
+static void mouse(GLFWwindow *window, int button, int state, int mods) {
+    double x, y;
+    glfwGetCursorPos(window, &x, &y);
+
     g_mouseClickX = x;
-    g_mouseClickY =
-        g_windowHeight - y - 1; // conversion from GLUT window-coordinate-system
-                                // to OpenGL window-coordinate-system
+    // conversion from window-coordinate-system to OpenGL window-coordinate-system
+    g_mouseClickY = g_windowHeight - y - 1;
 
-    g_mouseLClickButton |= (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN);
-    g_mouseRClickButton |= (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN);
-    g_mouseMClickButton |= (button == GLUT_MIDDLE_BUTTON && state == GLUT_DOWN);
+    g_mouseLClickButton |= (button == GLFW_MOUSE_BUTTON_LEFT && state == GLFW_PRESS);
+    g_mouseRClickButton |= (button == GLFW_MOUSE_BUTTON_RIGHT && state == GLFW_PRESS);
+    g_mouseMClickButton |= (button == GLFW_MOUSE_BUTTON_MIDDLE && state == GLFW_PRESS);
 
-    g_mouseLClickButton &= !(button == GLUT_LEFT_BUTTON && state == GLUT_UP);
-    g_mouseRClickButton &= !(button == GLUT_RIGHT_BUTTON && state == GLUT_UP);
-    g_mouseMClickButton &= !(button == GLUT_MIDDLE_BUTTON && state == GLUT_UP);
+    g_mouseLClickButton &= !(button == GLFW_MOUSE_BUTTON_LEFT && state == GLFW_RELEASE);
+    g_mouseRClickButton &= !(button == GLFW_MOUSE_BUTTON_RIGHT && state == GLFW_RELEASE);
+    g_mouseMClickButton &= !(button == GLFW_MOUSE_BUTTON_MIDDLE && state == GLFW_RELEASE);
 
-    g_mouseClickDown =
-        g_mouseLClickButton || g_mouseRClickButton || g_mouseMClickButton;
+    g_mouseClickDown = g_mouseLClickButton || g_mouseRClickButton || g_mouseMClickButton;
 }
 
-static void keyboardUp(const unsigned char key, const int x, const int y) {
-    switch (key) {
-    case ' ':
-        g_spaceDown = false;
-        break;
+static void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        switch (key) {
+        case GLFW_KEY_ESCAPE:
+            exit(0); // ESC
+        case GLFW_KEY_H:
+            cout << " ============== H E L P ==============\n\n"
+                 << "h\t\thelp menu\n"
+                 << "s\t\tsave screenshot\n"
+                 << "f\t\tToggle flat shading on/off.\n"
+                 << "o\t\tCycle object to edit\n"
+                 << "v\t\tCycle view\n"
+                 << "drag left mouse to rotate\n"
+                 << endl;
+            break;
+        case GLFW_KEY_S:
+            glFlush();
+            writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
+            break;
+        case GLFW_KEY_F:
+            g_activeShader ^= 1;
+            break;
+        case GLFW_KEY_SPACE:
+            g_spaceDown = true;
+            break;
+        }
+    } else {
+        switch (key) {
+        case GLFW_KEY_SPACE:
+            g_spaceDown = false;
+            break;
+        }
     }
-    glutPostRedisplay();
 }
 
-static void keyboard(const unsigned char key, const int x, const int y) {
-    switch (key) {
-    case 27:
-        exit(0); // ESC
-    case 'h':
-        cout << " ============== H E L P ==============\n\n"
-             << "h\t\thelp menu\n"
-             << "s\t\tsave screenshot\n"
-             << "f\t\tToggle flat shading on/off.\n"
-             << "o\t\tCycle object to edit\n"
-             << "v\t\tCycle view\n"
-             << "drag left mouse to rotate\n"
-             << endl;
-        break;
-    case 's':
-        glFlush();
-        writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
-        break;
-    case 'f':
-        g_activeShader ^= 1;
-        break;
-    case ' ':
-        g_spaceDown = true;
-        break;
+void error_callback(int error, const char* description) {
+    fprintf(stderr, "Error: %s\n", description);
+}
+
+static void initGlfwState(int argc, char **argv) {
+    glfwInit();
+
+    glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
+
+    g_window = glfwCreateWindow(g_windowWidth, g_windowHeight,
+                                "Assignment 3", NULL, NULL);
+    if (!g_window) {
+        fprintf(stderr, "Failed to create GLFW window or OpenGL context\n");
+        exit(1);
     }
-    glutPostRedisplay();
-}
+    glfwMakeContextCurrent(g_window);
+    glewInit();
 
-static void initGlutState(int argc, char *argv[]) {
-    glutInit(&argc, argv); // initialize Glut based on cmd-line args
-#ifdef __MAC__
-    glutInitDisplayMode(
-        GLUT_3_2_CORE_PROFILE | GLUT_RGBA | GLUT_DOUBLE |
-        GLUT_DEPTH); // core profile flag is required for GL 3.2 on Mac
-#else
-    glutInitDisplayMode(
-        GLUT_RGBA | GLUT_DOUBLE |
-        GLUT_DEPTH); //  RGBA pixel channels and double buffering
-#endif
-    glutInitWindowSize(g_windowWidth, g_windowHeight); // create a window
-    glutCreateWindow("Assignment 3");                  // title the window
+    glfwSwapInterval(1);
 
-    glutIgnoreKeyRepeat(true); // avoids repeated keyboard calls when holding
-                               // space to emulate middle mouse
-
-    glutDisplayFunc(display); // display rendering callback
-    glutReshapeFunc(reshape); // window reshape callback
-    glutMotionFunc(motion);   // mouse movement callback
-    glutMouseFunc(mouse);     // mouse click callback
-    glutKeyboardFunc(keyboard);
-    glutKeyboardUpFunc(keyboardUp);
+    glfwSetErrorCallback(error_callback);
+    glfwSetMouseButtonCallback(g_window, mouse);
+    glfwSetCursorPosCallback(g_window, motion);
+    glfwSetWindowSizeCallback(g_window, reshape);
+    glfwSetKeyCallback(g_window, keyboard);
 }
 
 static void initGLState() {
@@ -456,9 +464,17 @@ static void initGeometry() {
     initCubes();
 }
 
+void glfwLoop() {
+    while (!glfwWindowShouldClose(g_window)) {
+        display();
+        glfwWaitEventsTimeout(1./g_framesPerSecond);
+    }
+    printf("end loop\n");
+}
+
 int main(int argc, char *argv[]) {
     try {
-        initGlutState(argc, argv);
+        initGlfwState(argc, argv);
 
         // on Mac, we shouldn't use GLEW.
 
@@ -483,7 +499,7 @@ int main(int argc, char *argv[]) {
         initShaders();
         initGeometry();
 
-        glutMainLoop();
+        glfwLoop();
         return 0;
     } catch (const runtime_error &e) {
         cout << "Exception caught: " << e.what() << endl;
