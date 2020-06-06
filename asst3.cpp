@@ -11,15 +11,12 @@
 #include <string>
 #include <vector>
 
-#ifdef __MAC__
-#include <GLFW/glfw3.h>
-#include <OpenGL/gl3.h>
-#elif defined __gnu_linux__
+#ifdef __gnu_linux__
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #else
-#include <GL/glew.h>
-#include <GL/glfw3.h>
+#include "GL/glew.h"
+#include "GL/glfw3.h"
 #endif
 
 #include "cvec.h"
@@ -59,6 +56,9 @@ static GLFWwindow* g_window;
 
 static int g_windowWidth = 512;
 static int g_windowHeight = 512;
+static double g_wScale = 1;
+static double g_hScale = 1;
+
 static bool g_mouseClickDown = false; // is the mouse button pressed
 static bool g_mouseLClickButton, g_mouseRClickButton, g_mouseMClickButton;
 static bool g_spaceDown = false; // space state, for middle mouse emulation
@@ -318,6 +318,7 @@ static void display() {
 static void reshape(GLFWwindow * window, const int w, const int h) {
     int width, height;
     glfwGetFramebufferSize(g_window, &width, &height);
+
     glViewport(0, 0, width, height);
     g_windowWidth = w;
     g_windowHeight = h;
@@ -391,7 +392,7 @@ static void keyboard(GLFWwindow* window, int key, int scancode, int action, int 
             writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
             break;
         case GLFW_KEY_F:
-            g_activeShader ^= 1;
+            g_activeShader = (g_activeShader + 1) % g_numShaders;
             break;
         case GLFW_KEY_SPACE:
             g_spaceDown = true;
@@ -413,6 +414,11 @@ void error_callback(int error, const char* description) {
 static void initGlfwState(int argc, char **argv) {
     glfwInit();
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
     glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
 
     g_window = glfwCreateWindow(g_windowWidth, g_windowHeight,
@@ -431,6 +437,17 @@ static void initGlfwState(int argc, char **argv) {
     glfwSetCursorPosCallback(g_window, motion);
     glfwSetWindowSizeCallback(g_window, reshape);
     glfwSetKeyCallback(g_window, keyboard);
+
+    int screen_width, screen_height;
+    glfwGetWindowSize(g_window, &screen_width, &screen_height);
+    int pixel_width, pixel_height;
+    glfwGetFramebufferSize(g_window, &pixel_width, &pixel_height);
+
+    cout << screen_width << " " << screen_height << endl;
+    cout << pixel_width << " " << pixel_width << endl;
+
+    g_wScale = pixel_width / screen_width;
+    g_hScale = pixel_height / screen_height;
 }
 
 static void initGLState() {

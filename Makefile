@@ -8,9 +8,10 @@ ifeq ($(OS), Linux)
   LIBS += -lGL -lGLU -lglut -lGLEW -lglfw
 endif
 
-ifeq ($(OS), Darwin) # Assume OS X
-  CPPFLAGS += -D__MAC__ -stdlib=libstdc++
-  LDFLAGS += -framework GLUT -framework OpenGL
+ifeq ($(OS), Darwin)
+  CPPFLAGS += -D__MAC__ -std=c++11 -stdlib=libstdc++
+  LDFLAGS += -framework OpenGL -framework IOKit -framework Cocoa
+  LIBS += -lglfw.3 -lGLEW
 endif
 
 ifdef OPT
