@@ -7,12 +7,8 @@
 #include <string>
 #include <vector>
 
-#ifdef __MAC__
-#include <GLUT/glut.h>
-#else
-#include <GL/glew.h>
-#include <GL/glut.h>
-#endif
+#include "GL/glew.h"
+#include "GL/glfw3.h"
 
 #include "ppm.h"
 

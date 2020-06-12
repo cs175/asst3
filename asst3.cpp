@@ -11,13 +11,8 @@
 #include <string>
 #include <vector>
 
-#ifdef __gnu_linux__
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#else
 #include "GL/glew.h"
 #include "GL/glfw3.h"
-#endif
 
 #include "cvec.h"
 #include "geometrymaker.h"
@@ -64,8 +59,6 @@ static bool g_mouseLClickButton, g_mouseRClickButton, g_mouseMClickButton;
 static bool g_spaceDown = false; // space state, for middle mouse emulation
 static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
 static int g_activeShader = 0;
-
-static int g_framesPerSecond = 60;
 
 struct ShaderState {
     GlProgram program;
@@ -316,13 +309,10 @@ static void display() {
 }
 
 static void reshape(GLFWwindow * window, const int w, const int h) {
-    int width, height;
-    glfwGetFramebufferSize(g_window, &width, &height);
+    glfwGetFramebufferSize(g_window, &g_windowWidth, &g_windowHeight);
 
-    glViewport(0, 0, width, height);
-    g_windowWidth = w;
-    g_windowHeight = h;
-    cerr << "Size of window is now " << w << "x" << h << endl;
+    glViewport(0, 0, g_windowWidth, g_windowHeight);
+    cerr << "Size of window is now " << g_windowWidth << "x" << g_windowHeight << endl;
     updateFrustFovY();
 }
 
@@ -376,7 +366,7 @@ static void keyboard(GLFWwindow* window, int key, int scancode, int action, int 
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         switch (key) {
         case GLFW_KEY_ESCAPE:
-            exit(0); // ESC
+            exit(0);
         case GLFW_KEY_H:
             cout << " ============== H E L P ==============\n\n"
                  << "h\t\thelp menu\n"
@@ -411,7 +401,7 @@ void error_callback(int error, const char* description) {
     fprintf(stderr, "Error: %s\n", description);
 }
 
-static void initGlfwState(int argc, char **argv) {
+static void initGlfwState() {
     glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -484,26 +474,19 @@ static void initGeometry() {
 void glfwLoop() {
     while (!glfwWindowShouldClose(g_window)) {
         display();
-        glfwWaitEventsTimeout(1./g_framesPerSecond);
+        glfwWaitEvents();
     }
     printf("end loop\n");
 }
 
 int main(int argc, char *argv[]) {
     try {
-        initGlfwState(argc, argv);
+        initGlfwState();
 
         // on Mac, we shouldn't use GLEW.
-
 #ifndef __MAC__
         glewInit(); // load the OpenGL extensions
-#endif
 
-        cout << (g_Gl2Compatible ? "Will use OpenGL 2.x / GLSL 1.0"
-                                 : "Will use OpenGL 3.x / GLSL 1.5")
-             << endl;
-
-#ifndef __MAC__
         if ((!g_Gl2Compatible) && !GLEW_VERSION_3_0)
             throw runtime_error("Error: card/driver does not support OpenGL "
                                 "Shading Language v1.3");
@@ -511,6 +494,10 @@ int main(int argc, char *argv[]) {
             throw runtime_error("Error: card/driver does not support OpenGL "
                                 "Shading Language v1.0");
 #endif
+
+        cout << (g_Gl2Compatible ? "Will use OpenGL 2.x / GLSL 1.0"
+                                 : "Will use OpenGL 3.x / GLSL 1.5")
+             << endl;
 
         initGLState();
         initShaders();

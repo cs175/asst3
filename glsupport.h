@@ -4,13 +4,8 @@
 #include <iostream>
 #include <stdexcept>
 
-#ifdef __MAC__
-#include <GLUT/glut.h>
-#include <OpenGL/gl3.h>
-#else
-#include <GL/glew.h>
-#include <GL/glut.h>
-#endif
+#include "GL/glew.h"
+#include "GL/glfw3.h"
 
 // Check if there has been an error inside OpenGL and if yes, print the error
 // and through a runtime_error exception.
