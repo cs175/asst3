@@ -418,7 +418,6 @@ static void initGlfwState() {
         exit(1);
     }
     glfwMakeContextCurrent(g_window);
-    glewInit();
 
     glfwSwapInterval(1);
 
@@ -428,16 +427,6 @@ static void initGlfwState() {
     glfwSetWindowSizeCallback(g_window, reshape);
     glfwSetKeyCallback(g_window, keyboard);
 
-    int screen_width, screen_height;
-    glfwGetWindowSize(g_window, &screen_width, &screen_height);
-    int pixel_width, pixel_height;
-    glfwGetFramebufferSize(g_window, &pixel_width, &pixel_height);
-
-    cout << screen_width << " " << screen_height << endl;
-    cout << pixel_width << " " << pixel_width << endl;
-
-    g_wScale = pixel_width / screen_width;
-    g_hScale = pixel_height / screen_height;
 }
 
 static void initGLState() {
@@ -483,9 +472,8 @@ int main(int argc, char *argv[]) {
     try {
         initGlfwState();
 
-        // on Mac, we shouldn't use GLEW.
-#ifndef __MAC__
         glewInit(); // load the OpenGL extensions
+#ifndef __MAC__
 
         if ((!g_Gl2Compatible) && !GLEW_VERSION_3_0)
             throw runtime_error("Error: card/driver does not support OpenGL "
